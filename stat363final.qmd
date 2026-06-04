@@ -1,0 +1,32 @@
+---
+title: "stat363final"
+format: "revealjs"
+---
+```{r}
+#| include: false
+library(tidyverse)
+library(httr)
+gaycinema.df <- read_csv("https://raw.githubusercontent.com/r-lgbtq/tidyrainbow/refs/heads/main/data/LGBTQ-movie-database/movieData.csv")
+url <- "https://api.themoviedb.org/3/discover/movie"
+
+queryString <- list(
+  include_adult = "true",
+  include_video = "true",
+  language = "en-US",
+  page = "1",
+  sort_by = "popularity.desc",
+  with_keywords = 'lgbt|gay|lesbian|transgender|bisexual|intersex|queer|genderqueer|non-binary|gender|asexual'
+)
+
+response <- VERB("GET", url, query = queryString, content_type("application/octet-stream"), accept("application/json"))
+
+content(response, "text")
+```
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+1 + 1
+```
