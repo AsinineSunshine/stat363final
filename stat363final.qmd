@@ -122,4 +122,13 @@ for (keyword in kw.ids){
 
 ```
 
+```{r}
+
+kw.ids <- NULL
+for (keyword in kw.initial){
+ ind <- match(keyword, kw.results$name)
+ kw.ids <- c(kw.ids, kw.results$id[ind])
+}
+
+```
 
