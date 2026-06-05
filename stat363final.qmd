@@ -53,7 +53,7 @@ get_results <- function(keyword, pg.num = 1){
   return(df)
 }
 
-for (keyword in kw.mainlist){
+for (keyword in kw.initial){
   df <- get_results(keyword)
   kw.results <- unique(bind_rows(kw.results, df))
 }
@@ -65,6 +65,15 @@ queryString <- list(
 
 ```
 
+```{r}
+
+kw.ids <- NULL
+for (keyword in kw.initial){
+ ind <- match(keyword, kw.results$name)
+ kw.ids <- c(kw.ids, kw.results$id[ind])
+}
+
+```
 
 ```{r}
 # Getting the list of genres
@@ -122,13 +131,5 @@ for (keyword in kw.ids){
 
 ```
 
-```{r}
 
-kw.ids <- NULL
-for (keyword in kw.initial){
- ind <- match(keyword, kw.results$name)
- kw.ids <- c(kw.ids, kw.results$id[ind])
-}
-
-```
 
