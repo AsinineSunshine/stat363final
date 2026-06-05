@@ -6,8 +6,13 @@ format: "revealjs"
 #| include: false
 library(tidyverse)
 library(httr)
-gaycinema.df <- read_csv("https://raw.githubusercontent.com/r-lgbtq/tidyrainbow/refs/heads/main/data/LGBTQ-movie-database/movieData.csv")
+# gaycinema.df <- read_csv("https://raw.githubusercontent.com/r-lgbtq/tidyrainbow/refs/heads/main/data/LGBTQ-movie-database/movieData.csv")
 url <- "https://api.themoviedb.org/3/discover/movie"
+url <- "https://api.themoviedb.org/3/authentication"
+
+response <- VERB("GET", url, add_headers('Authorization' = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWE5NzlhMTE0OWZkMjRiMjg0YTJlYTBlNDM3OTk1MiIsIm5iZiI6MTc4MDUwNjYxNC42MzMsInN1YiI6IjZhMjA1ZmY2YjI5Yjc5ZDdlOTAwZjBiNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.NWUh9xrdJmSzFkidxG3zWWucUqIwsOWZ5lpDUb92Ufo'), content_type("application/octet-stream"), accept("application/json"))
+
+content(response, "text")
 
 queryString <- list(
   include_adult = "true",
@@ -19,6 +24,16 @@ queryString <- list(
 )
 
 response <- VERB("GET", url, query = queryString, content_type("application/octet-stream"), accept("application/json"))
+
+content(response, "text")
+```
+```{r}
+
+url <- "https://api.themoviedb.org/3/genre/movie/list"
+
+queryString <- list(language = "en")
+
+response <- VERB("GET", url, query = queryString, add_headers('Authorization' = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWE5NzlhMTE0OWZkMjRiMjg0YTJlYTBlNDM3OTk1MiIsIm5iZiI6MTc4MDUwNjYxNC42MzMsInN1YiI6IjZhMjA1ZmY2YjI5Yjc5ZDdlOTAwZjBiNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.NWUh9xrdJmSzFkidxG3zWWucUqIwsOWZ5lpDUb92Ufo'), content_type("application/octet-stream"), accept("application/json"))
 
 content(response, "text")
 ```
