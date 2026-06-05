@@ -6,42 +6,120 @@ format: "revealjs"
 #| include: false
 library(tidyverse)
 library(httr)
-# gaycinema.df <- read_csv("https://raw.githubusercontent.com/r-lgbtq/tidyrainbow/refs/heads/main/data/LGBTQ-movie-database/movieData.csv")
-url <- "https://api.themoviedb.org/3/discover/movie"
+
+authkey <- 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWE5NzlhMTE0OWZkMjRiMjg0YTJlYTBlNDM3OTk1MiIsIm5iZiI6MTc4MDUwNjYxNC42MzMsInN1YiI6IjZhMjA1ZmY2YjI5Yjc5ZDdlOTAwZjBiNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.NWUh9xrdJmSzFkidxG3zWWucUqIwsOWZ5lpDUb92Ufo'
+
 url <- "https://api.themoviedb.org/3/authentication"
 
-response <- VERB("GET", url, add_headers('Authorization' = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWE5NzlhMTE0OWZkMjRiMjg0YTJlYTBlNDM3OTk1MiIsIm5iZiI6MTc4MDUwNjYxNC42MzMsInN1YiI6IjZhMjA1ZmY2YjI5Yjc5ZDdlOTAwZjBiNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.NWUh9xrdJmSzFkidxG3zWWucUqIwsOWZ5lpDUb92Ufo'), content_type("application/octet-stream"), accept("application/json"))
-
-content(response, "text")
-
-queryString <- list(
-  include_adult = "true",
-  include_video = "true",
-  language = "en-US",
-  page = "1",
-  sort_by = "popularity.desc",
-  with_keywords = 'lgbt|gay|lesbian|transgender|bisexual|intersex|queer|genderqueer|non-binary|gender|asexual'
-)
-
-response <- VERB("GET", url, query = queryString, content_type("application/octet-stream"), accept("application/json"))
+response <- VERB("GET", url, add_headers('Authorization' = authkey), content_type("application/octet-stream"), accept("application/json"))
 
 content(response, "text")
 ```
+
 ```{r}
+# Getting the list of relevant keywords
+
+kw.initial <- c('lgbt', 'gay','lesbian','transgender','bisexual','intersex',
+                 'queer','genderqueer','non-binary','gender', 'asexual')
+kw.results <- tibble()
+
+url <- "https://api.themoviedb.org/3/search/keyword"
+
+# Function that takes in a keyword to search for other relevant keywords
+# in TMDB's database and returns it as a dataframe.
+get_results <- function(keyword, pg.num = 1){
+  
+  queryString <- list(
+    query = keyword,
+    page = pg.num
+  )
+  
+  response <- VERB(
+    "GET", url, query = queryString, 
+    add_headers('Authorization' = authkey), 
+    content_type("application/octet-stream"), 
+    accept("application/json")
+  )
+  
+  temp <- content(response)
+  
+  df <- bind_rows(temp$results)
+  
+  if (temp$total_pages>pg.num){
+    df <- bind_rows(df, get_results(keyword, pg.num+1))
+    df <- unique(df)
+  }
+  
+  return(df)
+}
+
+for (keyword in kw.mainlist){
+  df <- get_results(keyword)
+  kw.results <- unique(bind_rows(kw.results, df))
+}
+
+queryString <- list(
+  query = "lgbtq",
+  page = "1"
+)
+
+```
+
+
+```{r}
+# Getting the list of genres
 
 url <- "https://api.themoviedb.org/3/genre/movie/list"
 
 queryString <- list(language = "en")
 
-response <- VERB("GET", url, query = queryString, add_headers('Authorization' = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWE5NzlhMTE0OWZkMjRiMjg0YTJlYTBlNDM3OTk1MiIsIm5iZiI6MTc4MDUwNjYxNC42MzMsInN1YiI6IjZhMjA1ZmY2YjI5Yjc5ZDdlOTAwZjBiNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.NWUh9xrdJmSzFkidxG3zWWucUqIwsOWZ5lpDUb92Ufo'), content_type("application/octet-stream"), accept("application/json"))
+response <- VERB("GET", url, query = queryString, add_headers('Authorization' = authkey), content_type("application/octet-stream"), accept("application/json"))
 
-content(response, "text")
+genrelist <- bind_rows(content(response, "parsed"))
 ```
-
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
 ```{r}
-1 + 1
+# Searching the list of movies with the keywords
+url <- "https://api.themoviedb.org/3/discover/movie"
+movies <- NULL
+
+# Function that takes in a keyword and returns a dataframe of relevant movies
+get_movies <- function(keyword, pg.num = 1){
+  
+  queryString <- list(
+    include_adult = "true",
+    include_video = "true",
+    language = "en-US",
+    page = pg.num,
+    sort_by = "popularity.desc",
+    with_keywords = keyword
+  )
+  
+  response <- VERB(
+    "GET", url, query = queryString, 
+    add_headers('Authorization' = authkey), 
+    content_type("application/octet-stream"), 
+    accept("application/json")
+  )
+  
+  temp <- content(response, "parsed")
+  
+  df <- bind_rows(temp$results)
+  df <- df |> chop(genre_ids)
+  
+  if (pg.num < temp$total_pages){
+    df <- bind_rows(df, get_movies(keyword, pg.num+1))
+    df <- unique(df)
+  }
+  
+  return(df)
+}
+
+for (keyword in kw.ids){
+  df <- get_movies(keyword)
+  movies <- unique(bind_rows(movies, df))
+}
+
 ```
+
+
